@@ -1,4 +1,4 @@
+backend/bin/
+backend/obj/
 appsettings.Development.json
-.env
-bin/
-obj/
+*.env
