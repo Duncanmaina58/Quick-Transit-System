@@ -8,7 +8,16 @@ using QuickTransit.API.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// In Program.cs — add this to your JSON configuration:
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // This makes ALL enums serialize/deserialize as strings
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        );
+    });
+    
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -61,6 +70,9 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IShiftService, ShiftService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
 // ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {

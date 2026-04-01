@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuickTransit.API.Data;
@@ -11,9 +12,11 @@ using QuickTransit.API.Data;
 namespace QuickTransit.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328190238_AddTripuserid")]
+    partial class AddTripuserid
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -429,16 +432,10 @@ namespace QuickTransit.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal?>("Accuracy")
-                        .HasColumnType("numeric");
-
                     b.Property<decimal?>("Bearing")
                         .HasColumnType("numeric");
 
                     b.Property<decimal?>("FuelLevel")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("Heading")
                         .HasColumnType("numeric");
 
                     b.Property<decimal>("Latitude")

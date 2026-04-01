@@ -95,6 +95,8 @@ namespace QuickTransit.API.Data
                 e.HasIndex(t => t.DriverId);
                 e.HasIndex(t => t.ConductorId);
 
+                e.Property(t => t.UserId).IsRequired(false);
+
                 e.HasOne(t => t.Driver)
                  .WithMany()
                  .HasForeignKey(t => t.DriverId)

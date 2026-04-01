@@ -471,7 +471,7 @@ export interface EndTripRequest {
 export interface LogPassengerRequest {
   passengerCount: number;
   stopName?: string;
-  logType?: PassengerLogType;
+  logType: PassengerLogType;   // non-optional — always send explicitly
 }
 
 export interface TripFilterRequest {
@@ -487,34 +487,242 @@ export interface TripFilterRequest {
 }
 
 // ─────────────────────────────────────────────────────────────
-// ALERT / VIOLATION (stub — expand when building violations)
+// ALERT / INCIDENT
 // ─────────────────────────────────────────────────────────────
 
-export type AlertType     = 'Overloading' | 'OffRoute' | 'SafetyViolation' | 'Breakdown' | 'Accident' | 'Other';
-export type AlertSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
-export type AlertStatus   = 'Open' | 'Acknowledged' | 'Resolved' | 'Dismissed';
+export type IncidentType  = 'Accident' | 'Breakdown' | 'PoliceStop' | 'TrafficJam' | 'Other';
+export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AlertStatus   = 'active' | 'acknowledged' | 'resolved';
 
-export interface AlertResponse {
+export interface AlertSummaryResponse {
   id: string;
-  tripId?: string;
-  vehicleId: string;
-  registrationPlate: string;
-  reportedById: string;
-  reportedByName: string;
-  type: AlertType;
-  severity: AlertSeverity;
-  status: AlertStatus;
+  type: string;
+  severity: string;
+  status: string;
   description: string;
+  vehiclePlate?: string;
+  reportedByName?: string;
   createdAt: string;
   resolvedAt?: string;
+  tripId?: string;
+  vehicleId?: string;
 }
 
-export interface CreateAlertRequest {
-  tripId?: string;
-  vehicleId: string;
-  type: AlertType;
-  severity: AlertSeverity;
+export interface CreateIncidentRequest {
+  type: string;
+  severity: string;
   description: string;
+  vehicleId?: string;
+  tripId?: string;
+}
+
+export interface AcknowledgeAlertRequest {
+  notes?: string;
+}
+
+export interface AlertFilterRequest {
+  saccoId?: string;
+  vehicleId?: string;
+  status?: string;
+  type?: string;
+  severity?: string;
+  dateFrom?: Date | string;
+  page?: number;
+  pageSize?: number;
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIVE TRIP (real-time state — driver + conductor polling)
+// ─────────────────────────────────────────────────────────────
+
+export interface LiveTripResponse {
+  recentPath: any;
+  tripId: string;
+  status: string;
+  registrationPlate: string;
+  routeCode: string;
+  routeName: string;
+  origin: string;
+  destination: string;
+  stops: string[];
+  conductorName?: string;
+  actualStartTime?: string;
+  elapsedTime: string;
+  currentPassengerCount: number;
+  vehicleCapacity: number;
+  peakPassengerCount?: number;
+  isOverloaded: boolean;
+  recentLogs: PassengerLogResponse[];
+  activeAlerts: AlertSummaryResponse[];
+  // GPS fields
+  currentLatitude?: number;
+  currentLongitude?: number;
+  currentSpeedKmh?: number;
+  currentHeading?: number;
+  locationHistory: TripLocationResponse[];
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHIFT CONTEXT (crew assignment info)
+// ─────────────────────────────────────────────────────────────
+
+export interface ShiftContextResponse {
+  isAssigned: boolean;
+  assignedVehiclePlate?: string;
+  assignedVehicleId?: string;
+  vehicleCapacity?: number;
+  assignedRouteName?: string;
+  assignedRouteCode?: string;
+  assignedRouteOrigin?: string;
+  assignedRouteDestination?: string;
+  routeStops: string[];
+  assignedRouteId?: string;
+  conductorName?: string;   // for driver view
+  conductorId?: string;
+  driverName?: string;      // for conductor view
+  driverId?: string;
+  saccoName?: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// CANCEL TRIP
+// ─────────────────────────────────────────────────────────────
+
+export interface CancelTripRequest {
+  reason: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// GPS / LOCATION
+// ─────────────────────────────────────────────────────────────
+
+export interface UpdateLocationRequest {
+  latitude:  number;
+  longitude: number;
+  speed?:    number | null;
+  heading?:  number | null;
+  accuracy?: number;
+}
+
+export interface TripLocationResponse {
+  id:         string;
+  tripId:     string;
+  latitude:   number;
+  longitude:  number;
+  speed?:     number | null;
+  heading?:   number | null;
+  recordedAt: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIVE VEHICLE (fleet tracking)
+// ─────────────────────────────────────────────────────────────
+
+export interface LiveVehicleResponse {
+  tripId:            string;
+  vehicleId:         string;
+  registrationPlate: string;
+  driverName:        string;
+  conductorName:     string;
+  routeCode:         string;
+  routeName:         string;
+  origin:            string;
+  destination:       string;
+  latitude:          number;
+  longitude:         number;
+  speed?:            number | null;
+  heading?:          number | null;
+  currentPassengers: number;
+  vehicleCapacity:   number;
+  isOverloaded:      boolean;
+  lastUpdate:        string;
+  tripStatus:        string;
+  tripStartTime?:    string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOCATION / GPS TRACKING
+// ─────────────────────────────────────────────────────────────
+
+export interface PostLocationRequest {
+  latitude:  number;
+  longitude: number;
+  speed?:    number;   // km/h
+  heading?:  number;   // degrees 0–360
+  accuracy?: number;   // metres
+}
+
+export interface VehicleLocationResponse {
+  tripId:            string;
+  vehicleId:         string;
+  registrationPlate: string;
+  driverName:        string;
+  conductorName?:    string;
+  routeCode:         string;
+  routeName:         string;
+  origin:            string;
+  destination:       string;
+  latitude:          number;
+  longitude:         number;
+  speed?:            number;
+  heading?:          number;
+  currentPassengers: number;
+  vehicleCapacity:   number;
+  isOverloaded:      boolean;
+  tripStatus:        string;
+  lastUpdated:       string;
+  elapsedTime:       string;
+}
+
+export interface TripLocationPointResponse {
+  latitude:   number;
+  longitude:  number;
+  speed?:     number;
+  heading?:   number;
+  recordedAt: string;
+}
+
+// Extended LiveTripResponse with location fields
+// (these are added to the existing interface — update the LiveTripResponse above)
+// currentLatitude, currentLongitude, currentSpeed, currentHeading, recentPath
+
+// ─────────────────────────────────────────────────────────────
+// GPS / LOCATION TRACKING
+// ─────────────────────────────────────────────────────────────
+
+export interface PostLocationRequest {
+  latitude: number;
+  longitude: number;
+  speedKmh?: number;
+  heading?: number;
+  accuracyMeters?: number;
+}
+
+export interface TripLocationResponse {
+  latitude: number;
+  longitude: number;
+  speedKmh?: number;
+  heading?:   number | null;
+  recordedAt: string;
+}
+
+export interface VehicleLiveLocation {
+  tripId: string;
+  vehicleId: string;
+  registrationPlate: string;
+  routeCode: string;
+  routeName: string;
+  driverName: string;
+  currentPassengerCount: number;
+  vehicleCapacity: number;
+  isOverloaded: boolean;
+  status: string;
+  latitude: number;
+  longitude: number;
+  speedKmh?: number;
+  heading?: number;
+  lastSeenAt: string;
+  elapsedTime: string;
 }
 
 // ─────────────────────────────────────────────────────────────

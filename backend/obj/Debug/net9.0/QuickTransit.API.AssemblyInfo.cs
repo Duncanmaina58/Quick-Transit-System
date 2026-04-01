@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QuickTransit.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+76e8555b6fe07f3e6dce2839e4ba07fa6222bf78")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8e904de6542d895717a6ad407acae09d904e5d10")]
 [assembly: System.Reflection.AssemblyProductAttribute("QuickTransit.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QuickTransit.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

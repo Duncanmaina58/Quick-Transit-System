@@ -31,6 +31,9 @@ const NAV = [
     group: 'Operations',
     items: [
       { label: 'Trips',      href: '/dashboard/manager/trips',    icon: TripIcon },
+
+{ label: 'tracking',      href: '/dashboard/manager/tracking',    icon: TripIcon },
+
       { label: 'Violations', href: '/dashboard/manager/violations',icon: AlertIcon },
       { label: 'Reports',    href: '/dashboard/manager/reports',  icon: ReportIcon },
     ],

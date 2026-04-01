@@ -20,149 +20,159 @@ namespace QuickTransit.API.Services.Implementations
 
         // ── DRIVER CONTEXT ────────────────────────────────────────────────────
 
-        public async Task<DriverTripContextResponse> GetDriverContextAsync(Guid driverId)
-        {
-            // Get driver's assigned vehicle and route
-            var vehicle = await _context.Vehicles
-                .Include(v => v.Route)
-                .FirstOrDefaultAsync(v => v.DriverId == driverId && v.IsActive);
+      public async Task<DriverTripContextResponse> GetDriverContextAsync(Guid driverId)
+{
+    var vehicle = await _context.Vehicles
+        .AsNoTracking()
+        .Include(v => v.Route)
+        .FirstOrDefaultAsync(v => v.DriverId == driverId && v.IsActive);
 
-            // Check for active trip
-            var activeTrip = await _context.Trips
-                .Include(t => t.Vehicle)
-                .Include(t => t.Route)
-                .Include(t => t.Conductor)
-                .Include(t => t.PassengerLogs.OrderBy(pl => pl.LogTime))
-                .FirstOrDefaultAsync(t =>
-                    t.DriverId == driverId &&
-                    t.Status == TripStatus.InProgress);
+    var activeTrip = await _context.Trips
+        .AsNoTracking()
+        .Include(t => t.Vehicle)
+        .Include(t => t.Route)
+        .Include(t => t.Conductor)
+        .Include(t => t.PassengerLogs.OrderBy(pl => pl.LogTime))
+        .FirstOrDefaultAsync(t =>
+            t.DriverId == driverId &&
+            t.Status == TripStatus.InProgress);
 
-            return new DriverTripContextResponse
-            {
-                HasActiveTrip       = activeTrip != null,
-                ActiveTrip          = activeTrip != null ? MapToTripResponse(activeTrip) : null,
-                AssignedVehiclePlate = vehicle?.RegistrationPlate,
-                AssignedVehicleId   = vehicle?.Id,
-                AssignedRouteName   = vehicle?.Route?.Name,
-                AssignedRouteCode   = vehicle?.Route?.RouteCode,
-                AssignedRouteId     = vehicle?.RouteId,
-                CanStartTrip        = vehicle != null && vehicle.RouteId != null && activeTrip == null,
-            };
-        }
+    return new DriverTripContextResponse
+    {
+        HasActiveTrip        = activeTrip != null,
+        ActiveTrip           = activeTrip != null ? MapToTripResponse(activeTrip) : null,
+        AssignedVehiclePlate = vehicle?.RegistrationPlate,
+        AssignedVehicleId    = vehicle?.Id,
+        AssignedRouteName    = vehicle?.Route?.Name,
+        AssignedRouteCode    = vehicle?.Route?.RouteCode,
+        AssignedRouteId      = vehicle?.RouteId,
+        CanStartTrip         = vehicle != null && vehicle.RouteId != null && activeTrip == null,
+    };
+}
 
         // ── START TRIP ────────────────────────────────────────────────────────
 
-        public async Task<TripResponse> StartTripAsync(StartTripRequest request, Guid driverId)
+public async Task<TripResponse> StartTripAsync(StartTripRequest request, Guid driverId)
+{
+    var vehicle = await _context.Vehicles
+        .Include(v => v.Sacco)
+        .Include(v => v.Route)
+        .Include(v => v.Conductor)
+        .FirstOrDefaultAsync(v => v.Id == request.VehicleId && v.IsActive);
+
+    if (vehicle == null)
+        throw new Exception("Vehicle not found or inactive.");
+    if (vehicle.DriverId != driverId)
+        throw new Exception("You are not assigned to this vehicle.");
+    if (vehicle.Status != VehicleStatus.Active)
+        throw new Exception($"Vehicle is currently {vehicle.Status} and cannot start a trip.");
+
+    var route = await _context.Routes.FindAsync(request.RouteId);
+    if (route == null || !route.IsActive)
+        throw new Exception("Route not found or inactive.");
+
+    var hasActive = await _context.Trips
+        .AnyAsync(t => t.DriverId == driverId && t.Status == TripStatus.InProgress);
+    if (hasActive)
+        throw new Exception("You already have an active trip. End it before starting a new one.");
+
+    var vehicleActive = await _context.Trips
+        .AnyAsync(t => t.VehicleId == request.VehicleId && t.Status == TripStatus.InProgress);
+    if (vehicleActive)
+        throw new Exception("This vehicle already has an active trip.");
+
+    var conductorId = request.ConductorId ?? vehicle.ConductorId;
+
+    var trip = new Trip
+    {
+        Id                    = Guid.NewGuid(),
+        VehicleId             = request.VehicleId,
+        RouteId               = request.RouteId,
+        DriverId              = driverId,
+        ConductorId           = conductorId,
+        Status                = TripStatus.InProgress,
+        ActualStartTime       = DateTime.UtcNow,
+        InitialPassengerCount = request.InitialPassengerCount ?? 0,
+        PeakPassengerCount    = request.InitialPassengerCount ?? 0,
+        Notes                 = request.Notes?.Trim(),
+        CreatedAt             = DateTime.UtcNow,
+        // ← NO PassengerLogs.Add() here — do it after save
+    };
+
+    _context.Trips.Add(trip);
+    await _context.SaveChangesAsync(); // Trip persisted first
+
+    // Add initial log AFTER trip is saved — separate operation
+    if (request.InitialPassengerCount.HasValue && request.InitialPassengerCount > 0)
+    {
+        var initialLog = new PassengerLog
         {
-            // Validate driver is assigned to this vehicle
-            var vehicle = await _context.Vehicles
-                .Include(v => v.Sacco)
-                .Include(v => v.Route)
-                .Include(v => v.Conductor)
-                .FirstOrDefaultAsync(v => v.Id == request.VehicleId && v.IsActive);
+            Id                    = Guid.NewGuid(),
+            TripId                = trip.Id,
+            PassengerCount        = request.InitialPassengerCount.Value,
+            PassengersBoarded     = request.InitialPassengerCount.Value,
+            PassengersAlighted    = 0,
+            CurrentPassengerCount = request.InitialPassengerCount.Value,
+            LogType               = PassengerLogType.Boarding,
+            StopName              = route.Origin,
+            LogTime               = DateTime.UtcNow,
+        };
+        await _context.PassengerLogs.AddAsync(initialLog);
+        await _context.SaveChangesAsync();
+    }
 
-            if (vehicle == null)
-                throw new Exception("Vehicle not found or inactive.");
-            if (vehicle.DriverId != driverId)
-                throw new Exception("You are not assigned to this vehicle.");
-            if (vehicle.Status != VehicleStatus.Active)
-                throw new Exception($"Vehicle is currently {vehicle.Status} and cannot start a trip.");
-
-            // Validate route
-            var route = await _context.Routes.FindAsync(request.RouteId);
-            if (route == null || !route.IsActive)
-                throw new Exception("Route not found or inactive.");
-
-            // Check no active trip already
-            var hasActive = await _context.Trips
-                .AnyAsync(t => t.DriverId == driverId && t.Status == TripStatus.InProgress);
-            if (hasActive)
-                throw new Exception("You already have an active trip in progress. End it before starting a new one.");
-
-            // Also check vehicle isn't on another trip
-            var vehicleActive = await _context.Trips
-                .AnyAsync(t => t.VehicleId == request.VehicleId && t.Status == TripStatus.InProgress);
-            if (vehicleActive)
-                throw new Exception("This vehicle already has an active trip.");
-
-            var conductorId = request.ConductorId ?? vehicle.ConductorId;
-
-            var trip = new Trip
-            {
-                Id                    = Guid.NewGuid(),
-                VehicleId             = request.VehicleId,
-                RouteId               = request.RouteId,
-                DriverId              = driverId,
-                ConductorId           = conductorId,
-                Status                = TripStatus.InProgress,
-                ActualStartTime       = DateTime.UtcNow,
-                InitialPassengerCount = request.InitialPassengerCount ?? 0,
-                PeakPassengerCount    = request.InitialPassengerCount ?? 0,
-                Notes                 = request.Notes?.Trim(),
-                CreatedAt             = DateTime.UtcNow,
-            };
-
-            // Log initial passengers if provided
-            if (request.InitialPassengerCount.HasValue && request.InitialPassengerCount > 0)
-            {
-                trip.PassengerLogs.Add(new PassengerLog
-                {
-                    Id             = Guid.NewGuid(),
-                    TripId         = trip.Id,
-                    PassengerCount = request.InitialPassengerCount.Value,
-                    LogType        = PassengerLogType.Boarding,
-                    StopName       = route.Origin,
-                    LogTime        = DateTime.UtcNow,
-                });
-            }
-
-            _context.Trips.Add(trip);
-            await _context.SaveChangesAsync();
-
-            return await GetTripByIdInternalAsync(trip.Id);
-        }
-
+    return await GetTripByIdInternalAsync(trip.Id);
+}
         // ── END TRIP ──────────────────────────────────────────────────────────
+// ── END TRIP ──────────────────────────────────────────────────────────────────
+public async Task<TripResponse> EndTripAsync(Guid tripId, EndTripRequest request, Guid driverId)
+{
+    // Load WITHOUT PassengerLogs to avoid tracking conflict
+    var trip = await _context.Trips
+        .FirstOrDefaultAsync(t => t.Id == tripId);
 
-        public async Task<TripResponse> EndTripAsync(Guid tripId, EndTripRequest request, Guid driverId)
-        {
-            var trip = await _context.Trips
-                .Include(t => t.PassengerLogs)
-                .FirstOrDefaultAsync(t => t.Id == tripId);
+    if (trip == null)
+        throw new Exception("Trip not found.");
+    if (trip.DriverId != driverId)
+        throw new Exception("You can only end your own trips.");
+    if (trip.Status != TripStatus.InProgress)
+        throw new Exception($"Trip is {trip.Status} and cannot be ended.");
 
-            if (trip == null) throw new Exception("Trip not found.");
-            if (trip.DriverId != driverId)
-                throw new Exception("You can only end your own trips.");
-            if (trip.Status != TripStatus.InProgress)
-                throw new Exception($"Trip is {trip.Status} and cannot be ended.");
+    // Get peak from passenger logs separately — no tracking conflict
+    var peak = await _context.PassengerLogs
+        .Where(pl => pl.TripId == tripId)
+        .MaxAsync(pl => (int?)pl.PassengerCount) ?? request.FinalPassengerCount;
 
-            var peak = trip.PassengerLogs.Any()
-                ? trip.PassengerLogs.Max(pl => pl.PassengerCount)
-                : request.FinalPassengerCount;
+    trip.Status              = TripStatus.Completed;
+    trip.ActualEndTime       = DateTime.UtcNow;
+    trip.FinalPassengerCount = request.FinalPassengerCount;
+    trip.PeakPassengerCount  = Math.Max(peak, trip.PeakPassengerCount ?? 0);
+    trip.UpdatedAt           = DateTime.UtcNow;
 
-            trip.Status              = TripStatus.Completed;
-            trip.ActualEndTime       = DateTime.UtcNow;
-            trip.FinalPassengerCount = request.FinalPassengerCount;
-            trip.PeakPassengerCount  = Math.Max(peak, trip.PeakPassengerCount ?? 0);
-            trip.UpdatedAt           = DateTime.UtcNow;
+    if (!string.IsNullOrWhiteSpace(request.Notes))
+        trip.Notes = request.Notes.Trim();
 
-            if (!string.IsNullOrWhiteSpace(request.Notes))
-                trip.Notes = request.Notes.Trim();
+    // Add final log as a NEW entity — not through the collection
+    var finalLog = new PassengerLog
+    {
+        Id                    = Guid.NewGuid(),
+        TripId                = trip.Id,
+        PassengerCount        = request.FinalPassengerCount,
+        PassengersBoarded     = 0,
+        PassengersAlighted    = 0,
+        CurrentPassengerCount = request.FinalPassengerCount,
+        LogType               = PassengerLogType.Checkpoint,
+        StopName              = "Trip End",
+        LogTime               = DateTime.UtcNow,
+    };
 
-            // Log final passenger count
-            trip.PassengerLogs.Add(new PassengerLog
-            {
-                Id             = Guid.NewGuid(),
-                TripId         = trip.Id,
-                PassengerCount = request.FinalPassengerCount,
-                LogType        = PassengerLogType.Checkpoint,
-                StopName       = "Trip End",
-                LogTime        = DateTime.UtcNow,
-            });
+    // Use entry-state approach to avoid double-tracking
+    _context.Entry(trip).State = EntityState.Modified;
+    await _context.PassengerLogs.AddAsync(finalLog);
+    await _context.SaveChangesAsync();
 
-            await _context.SaveChangesAsync();
-            return await GetTripByIdInternalAsync(tripId);
-        }
+    return await GetTripByIdInternalAsync(tripId);
+}
 
         // ── CANCEL TRIP ───────────────────────────────────────────────────────
 
@@ -185,39 +195,52 @@ namespace QuickTransit.API.Services.Implementations
 
         // ── LOG PASSENGERS (conductor) ────────────────────────────────────────
 
-        public async Task<TripResponse> LogPassengersAsync(Guid tripId, LogPassengerRequest request, Guid conductorId)
-        {
-            var trip = await _context.Trips
-                .Include(t => t.PassengerLogs)
-                .FirstOrDefaultAsync(t => t.Id == tripId);
+       public async Task<TripResponse> LogPassengersAsync(
+    Guid tripId, LogPassengerRequest request, Guid conductorId)
+{
+    // Load trip WITHOUT navigation collections
+    var trip = await _context.Trips
+        .FirstOrDefaultAsync(t => t.Id == tripId);
 
-            if (trip == null) throw new Exception("Trip not found.");
-            if (trip.ConductorId != conductorId)
-                throw new Exception("You are not assigned to this trip.");
-            if (trip.Status != TripStatus.InProgress)
-                throw new Exception("Can only log passengers for trips in progress.");
+    if (trip == null)
+        throw new Exception("Trip not found.");
+    if (trip.ConductorId != conductorId)
+        throw new Exception("You are not assigned to this trip.");
+    if (trip.Status != TripStatus.InProgress)
+        throw new Exception("Can only log passengers for trips in progress.");
 
-            var log = new PassengerLog
-            {
-                Id             = Guid.NewGuid(),
-                TripId         = tripId,
-                PassengerCount = request.PassengerCount,
-                LogType        = request.LogType,
-                StopName       = request.StopName?.Trim(),
-                LogTime        = DateTime.UtcNow,
-            };
-            _context.PassengerLogs.Add(log);
+    // Build the log with ALL fields your entity needs
+    int boarded   = request.LogType == PassengerLogType.Boarding   ? request.PassengerCount : 0;
+    int alighted  = request.LogType == PassengerLogType.Alighting  ? request.PassengerCount : 0;
 
-            // Update peak
-            if (request.PassengerCount > (trip.PeakPassengerCount ?? 0))
-                trip.PeakPassengerCount = request.PassengerCount;
+    var log = new PassengerLog
+    {
+        Id                    = Guid.NewGuid(),
+        TripId                = tripId,
+        PassengerCount        = request.PassengerCount,        // compatibility field
+        PassengersBoarded     = boarded,
+        PassengersAlighted    = alighted,
+        CurrentPassengerCount = request.PassengerCount,
+        LogType = request.LogType,
+        StopName              = request.StopName?.Trim(),
+        LogTime               = DateTime.UtcNow,
+    };
 
-            trip.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+    // Add log directly — no touching the trip navigation collection
+    await _context.PassengerLogs.AddAsync(log);
 
-            return await GetTripByIdInternalAsync(tripId);
-        }
+    // Update peak on trip — reload fresh to avoid concurrency
+    if (request.PassengerCount > (trip.PeakPassengerCount ?? 0))
+    {
+        trip.PeakPassengerCount = request.PassengerCount;
+        trip.UpdatedAt          = DateTime.UtcNow;
+        _context.Entry(trip).State = EntityState.Modified;
+    }
 
+    await _context.SaveChangesAsync();
+
+    return await GetTripByIdInternalAsync(tripId);
+}
         // ── GET TRIP BY ID ────────────────────────────────────────────────────
 
         public async Task<TripResponse> GetTripByIdAsync(Guid tripId, Guid requesterId, string role)
@@ -268,15 +291,16 @@ namespace QuickTransit.API.Services.Implementations
 
         // ── PRIVATE ───────────────────────────────────────────────────────────
 
-        private async Task<PagedResponse<TripSummaryResponse>> QueryTripsAsync(
-            TripFilterRequest filter, Guid? conductorId = null)
-        {
-            var query = _context.Trips
-                .Include(t => t.Vehicle).ThenInclude(v => v.Sacco)
-                .Include(t => t.Route)
-                .Include(t => t.Driver)
-                .Include(t => t.Conductor)
-                .AsQueryable();
+private async Task<PagedResponse<TripSummaryResponse>> QueryTripsAsync(
+    TripFilterRequest filter, Guid? conductorId = null)
+{
+    var query = _context.Trips
+        .AsNoTracking()                          // ← add this
+        .Include(t => t.Vehicle).ThenInclude(v => v.Sacco)
+        .Include(t => t.Route)
+        .Include(t => t.Driver)
+        .Include(t => t.Conductor)
+        .AsQueryable();
 
             // Conductor scoping
             if (conductorId.HasValue)
@@ -321,19 +345,21 @@ namespace QuickTransit.API.Services.Implementations
             };
         }
 
-        private async Task<TripResponse> GetTripByIdInternalAsync(Guid tripId)
-        {
-            var trip = await _context.Trips
-                .Include(t => t.Vehicle).ThenInclude(v => v.Sacco)
-                .Include(t => t.Route)
-                .Include(t => t.Driver)
-                .Include(t => t.Conductor)
-                .Include(t => t.PassengerLogs.OrderBy(pl => pl.LogTime))
-                .FirstOrDefaultAsync(t => t.Id == tripId);
+      private async Task<TripResponse> GetTripByIdInternalAsync(Guid tripId)
+{
+    // Use AsNoTracking to avoid any tracking conflicts on reads
+    var trip = await _context.Trips
+        .AsNoTracking()
+        .Include(t => t.Vehicle).ThenInclude(v => v.Sacco)
+        .Include(t => t.Route)
+        .Include(t => t.Driver)
+        .Include(t => t.Conductor)
+        .Include(t => t.PassengerLogs.OrderBy(pl => pl.LogTime))
+        .FirstOrDefaultAsync(t => t.Id == tripId);
 
-            if (trip == null) throw new Exception("Trip not found.");
-            return MapToTripResponse(trip);
-        }
+    if (trip == null) throw new Exception("Trip not found.");
+    return MapToTripResponse(trip);
+}
 
         private async Task<Guid> GetSaccoIdAsync(Guid userId)
         {

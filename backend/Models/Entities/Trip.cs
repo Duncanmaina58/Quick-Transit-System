@@ -28,7 +28,8 @@ namespace QuickTransit.API.Models.Entities
 
         [Required]
         public Guid RouteId { get; set; }
-
+// Add this to Trip.cs — matches what's actually in your database
+public Guid? UserId { get; set; }  // legacy field, kept for DB compatibility
         [Required]
         public Guid DriverId { get; set; }
 

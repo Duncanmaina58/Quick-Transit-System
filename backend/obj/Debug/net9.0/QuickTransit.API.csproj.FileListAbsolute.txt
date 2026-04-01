@@ -8,7 +8,6 @@ C:\Users\dun-\Desktop\QuickTransit\backend\obj\Debug\net9.0\QuickTransit.API.Mvc
 C:\Users\dun-\Desktop\QuickTransit\backend\obj\Debug\net9.0\QuickTransit.API.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\dun-\Desktop\QuickTransit\backend\obj\Debug\net9.0\QuickTransit.API.sourcelink.json
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\appsettings.Development.json
-C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\appsettings.json
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\QuickTransit.API.staticwebassets.endpoints.json
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\QuickTransit.API.exe
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\QuickTransit.API.deps.json
