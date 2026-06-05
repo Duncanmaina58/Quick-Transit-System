@@ -29,25 +29,25 @@ pipeline {
                 '''
             }
         }
-        stage('Frontend Build (Node.js)') {
-            steps {
-                sh 'ls -la frontend/'
-                sh '''
-                    docker run --rm \
-                      -v "${HOST_BASE}/frontend:/app" \
-                      -w /app \
-                      node:20 \
-                      npm install
-                '''
-                sh '''
-                    docker run --rm \
-                      -v "${HOST_BASE}/frontend:/app" \
-                      -w /app \
-                      node:20 \
-                      npm run build
-                '''
-            }
-        }
+  stage('Frontend Build (Node.js)') {
+    steps {
+        sh 'ls -la frontend/'
+        sh '''
+            docker run --rm \
+              -v "${HOST_BASE}/frontend:/app" \
+              -w /app \
+              node:20-bullseye \
+              npm install
+        '''
+        sh '''
+            docker run --rm \
+              -v "${HOST_BASE}/frontend:/app" \
+              -w /app \
+              node:20-bullseye \
+              npm run build
+        '''
+    }
+}
     }
     post {
         success { echo 'CI Pipeline SUCCESS 🎉' }
