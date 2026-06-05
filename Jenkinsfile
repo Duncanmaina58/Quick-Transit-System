@@ -9,22 +9,30 @@ pipeline {
             }
         }
 
-        stage('Backend Build') {
+        stage('Backend Build (.NET)') {
             steps {
-                dir('Backend') {
-                    sh 'dotnet --version'
-                    sh 'dotnet restore'
-                    sh 'dotnet build --configuration Release'
+                script {
+                    docker.image('mcr.microsoft.com/dotnet/sdk:8.0').inside {
+                        dir('Backend') {
+                            sh 'dotnet --version'
+                            sh 'dotnet restore'
+                            sh 'dotnet build --configuration Release'
+                        }
+                    }
                 }
             }
         }
 
-        stage('Frontend Build') {
+        stage('Frontend Build (Node.js)') {
             steps {
-                dir('Frontend') {
-                    sh 'npm --version'
-                    sh 'npm install'
-                    sh 'npm run build'
+                script {
+                    docker.image('node:20').inside {
+                        dir('Frontend') {
+                            sh 'node --version'
+                            sh 'npm install'
+                            sh 'npm run build'
+                        }
+                    }
                 }
             }
         }
