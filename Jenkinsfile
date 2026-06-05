@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                cleanWs()
+                cleanWs()  // Clean workspace before checkout
                 checkout scm
             }
         }
