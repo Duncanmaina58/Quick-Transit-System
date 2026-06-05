@@ -134,19 +134,22 @@ export default function DriverDashboardPage() {
     });
   }, [mapsReady]);
 
-  // ── GPS location posting (when trip active) ───────────────────────────────
-  const postLocationMut = useMutation({
-    mutationFn: (pos: GeolocationPosition) => {
-      if (!trip?.id) return Promise.resolve();
-      return locationApi.postLocation(trip.id, {
-        latitude:  pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        speed:     pos.coords.speed != null ? pos.coords.speed * 3.6 : undefined, // m/s → km/h
-        heading:   pos.coords.heading ?? undefined,
-        accuracy:  pos.coords.accuracy,
-      });
-    },
-  });
+const postLocationMut = useMutation({
+  mutationFn: async (pos: GeolocationPosition): Promise<void> => {
+    if (!trip?.id) return;
+
+    await locationApi.updateLocation(trip.id, {
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      speed:
+        pos.coords.speed != null
+          ? pos.coords.speed * 3.6
+          : undefined,
+      heading: pos.coords.heading ?? undefined,
+      accuracy: pos.coords.accuracy,
+    });
+  },
+});
 
   // Start / stop GPS watch when trip active
   useEffect(() => {
@@ -212,7 +215,7 @@ export default function DriverDashboardPage() {
   // ── Draw path from live data ───────────────────────────────────────────────
   useEffect(() => {
     if (!mapsReady || !mapObj.current || !live?.recentPath?.length) return;
-    const path = live.recentPath.map(p => ({ lat: Number(p.latitude), lng: Number(p.longitude) }));
+    const path = live.recentPath.map((p: { latitude: number | string; longitude: number | string }) => ({ lat: Number(p.latitude), lng: Number(p.longitude) }));
 
     if (!pathRef.current) {
       pathRef.current = new google.maps.Polyline({
@@ -466,10 +469,47 @@ export default function DriverDashboardPage() {
       )}
 
       {/* ── Modals ──────────────────────────────────────────────────── */}
-      {modal === 'start' && shift && <StartModal shift={shift} onClose={() => setModal(null)} onSubmit={r => startMut.mutate(r)} loading={startMut.isPending} />}
-      {modal === 'end' && trip && <EndModal trip={trip} elapsed={elapsed} onClose={() => setModal(null)} onSubmit={d => endMut.mutate(d)} loading={endMut.isPending} />}
-      {modal === 'cancel' && trip && <CancelModal trip={trip} onClose={() => setModal(null)} onConfirm={r => cancelMut.mutate(r)} loading={cancelMut.isPending} />}
-      {modal === 'incident' && <IncidentModal onClose={() => setModal(null)} onSubmit={(t, d) => incidentMut.mutate({ type: t, description: d })} loading={incidentMut.isPending} />}
+      {modal === 'start' && shift && (
+  <StartModal
+    shift={shift}
+    onClose={() => setModal(null)}
+    onSubmit={(r: { initialPassengerCount: number; notes: string }) =>
+      startMut.mutate(r)
+    }
+    loading={startMut.isPending}
+  />
+)}
+
+{modal === 'end' && trip && (
+  <EndModal
+    trip={trip}
+    elapsed={elapsed}
+    onClose={() => setModal(null)}
+    onSubmit={(d: { count: number; notes: string }) =>
+      endMut.mutate(d)
+    }
+    loading={endMut.isPending}
+  />
+)}
+
+{modal === 'cancel' && trip && (
+  <CancelModal
+    trip={trip}
+    onClose={() => setModal(null)}
+    onConfirm={(r: string) => cancelMut.mutate(r)}
+    loading={cancelMut.isPending}
+  />
+)}
+
+{modal === 'incident' && (
+  <IncidentModal
+    onClose={() => setModal(null)}
+    onSubmit={(t: string, d: string) =>
+      incidentMut.mutate({ type: t, description: d })
+    }
+    loading={incidentMut.isPending}
+  />
+)}
     </div>
   );
 }
@@ -658,4 +698,8 @@ function IncidentModal({ onClose, onSubmit, loading }: any) {
       <MF onClose={onClose} loading={loading} label="🚨 Report" color="#f97316" dark={false} disabled={!type || !desc.trim()} onSubmit={() => onSubmit(type, desc)} />
     </Overlay>
   );
+}
+
+function busMarkerSvg(arg0: string, arg1: string, arg2: number | undefined): string | number | boolean {
+  throw new Error('Function not implemented.');
 }

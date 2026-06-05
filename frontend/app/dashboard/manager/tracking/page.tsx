@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { locationApi } from '@/lib/api/location';
 import { useGoogleMaps,  } from '@/lib/hooks/useGoogleMaps';
 import type { VehicleLocationResponse } from '@/types/api';
-
+import type { LiveVehicleResponse } from '@/types/api';
 const T = {
   bg: '#0d1b2a', surface: '#0a1628', card: '#0f2033',
   border: '#1e3a5f', teal: '#0891b2', text: '#e2eaf3',
@@ -22,20 +22,22 @@ export default function ManagerTrackingPage() {
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
-  const [selected, setSelected] = useState<VehicleLocationResponse | null>(null);
+  const [selected, setSelected] =
+  useState<LiveVehicleResponse | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // ── Poll active vehicle locations ─────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ['active-locations'],
-    queryFn:  async () => {
-      const r = await locationApi.getActiveLocations();
-      setLastRefresh(new Date());
-      return r;
-    },
+    queryFn: async () => {
+  const r = await locationApi.getLiveFleet();
+  setLastRefresh(new Date());
+  return r;
+},
     refetchInterval: 10000, // refresh every 10 seconds
   });
-  const vehicles: VehicleLocationResponse[] = data?.data?.data ?? [];
+  const vehicles: LiveVehicleResponse[] =
+  data?.data?.data ?? [];
 
   // ── Init map ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -314,7 +316,9 @@ export default function ManagerTrackingPage() {
 
 // ── Vehicle Row ───────────────────────────────────────────────────────────────
 function VehicleRow({ vehicle, selected, onClick }: {
-  vehicle: VehicleLocationResponse; selected: boolean; onClick: () => void;
+  vehicle: LiveVehicleResponse;
+  selected: boolean;
+  onClick: () => void;
 }) {
   const loadPct  = Math.min(100, Math.round((vehicle.currentPassengers / vehicle.vehicleCapacity) * 100));
   const barColor = vehicle.isOverloaded ? T.danger : loadPct > 80 ? T.warning : T.teal;
@@ -380,7 +384,7 @@ function DetailBox({ label, value, mono, accent }: { label: string; value: strin
   );
 }
 
-function buildInfoWindowContent(v: VehicleLocationResponse): string {
+function buildInfoWindowContent(v: LiveVehicleResponse): string {
   const loadPct = Math.min(100, Math.round((v.currentPassengers / v.vehicleCapacity) * 100));
   return `
     <div style="font-family:'IBM Plex Sans',sans-serif;padding:8px;min-width:180px;background:#0f2033;color:#e2eaf3;border-radius:8px">
@@ -392,4 +396,8 @@ function buildInfoWindowContent(v: VehicleLocationResponse): string {
       <div style="font-size:9px;color:#5b7fa0;margin-top:4px">${v.elapsedTime} elapsed</div>
     </div>
   `;
+}
+
+function busMarkerSvg(color: string, registrationPlate: string, arg2: number | undefined): string | number | boolean {
+  throw new Error('Function not implemented.');
 }

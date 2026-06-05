@@ -619,6 +619,8 @@ export interface TripLocationResponse {
 // ─────────────────────────────────────────────────────────────
 
 export interface LiveVehicleResponse {
+  elapsedTime: string;
+  lastUpdated: string | number | Date;
   tripId:            string;
   vehicleId:         string;
   registrationPlate: string;

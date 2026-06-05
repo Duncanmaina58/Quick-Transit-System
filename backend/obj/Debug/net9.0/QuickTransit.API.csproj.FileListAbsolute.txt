@@ -146,3 +146,4 @@ C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\System.IdentityModel
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.dll
 C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\dun-\Desktop\QuickTransit\backend\bin\Debug\net9.0\appsettings.json

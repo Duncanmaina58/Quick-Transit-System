@@ -139,7 +139,12 @@ export default function ConductorDashboardPage() {
           position: pos,
           map: mapObj.current,
           icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('#8b5cf6', plate),
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+    <circle cx="28" cy="28" r="14" fill="#8b5cf6"/>
+    <text x="28" y="32" text-anchor="middle" font-size="8" font-family="monospace" fill="#fff">${plate}</text>
+  </svg>`
+),
             anchor: new google.maps.Point(28, 28),
           },
         });
@@ -151,7 +156,7 @@ export default function ConductorDashboardPage() {
 
     // Draw path
     if (live?.recentPath?.length) {
-      const path = live.recentPath.map(p => ({ lat: Number(p.latitude), lng: Number(p.longitude) }));
+     const path = live.recentPath.map((p: { latitude: number | string; longitude: number | string }) => ({ lat: Number(p.latitude), lng: Number(p.longitude) }));
       if (!pathRef.current) {
         pathRef.current = new google.maps.Polyline({
           path, map: mapObj.current,
@@ -410,7 +415,11 @@ export default function ConductorDashboardPage() {
             routeName={currentTrip.routeName}
             stops={live?.stops ?? []}
             onClose={() => setLogModal(false)}
-            onSubmit={(count, stop, type) => logMut.mutate({ count, stop, type })}
+            onSubmit={(
+  count: number,
+  stop: string,
+  type: PassengerLogType
+) => logMut.mutate({ count, stop, type })}
             loading={logMut.isPending}
           />
         </Overlay>

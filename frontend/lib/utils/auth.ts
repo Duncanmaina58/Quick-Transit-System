@@ -14,6 +14,7 @@ interface JwtPayload {
 export class AuthService {
   private static readonly TOKEN_KEY = 'accessToken';
   private static readonly USER_KEY  = 'userData';
+  static requiresPasswordChange: any;
 
   // ── Storage helpers ───────────────────────────────────────────────────────
 

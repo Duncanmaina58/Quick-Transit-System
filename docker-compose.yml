@@ -36,7 +36,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
 
     ports:
-      - "8080:8080"
+      - "8082:8080"
 
     depends_on:
       - postgres

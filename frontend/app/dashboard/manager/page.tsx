@@ -69,7 +69,7 @@ export default function ManagerDashboardPage() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {dash?.maintenanceDue > 0 && (
+          {dash?.maintenanceDue !== undefined && dash.maintenanceDue > 0 && (
             <div style={{
               padding: '7px 12px', borderRadius: 8,
               background: 'rgba(245,158,11,0.1)',
@@ -86,7 +86,7 @@ export default function ManagerDashboardPage() {
             fontSize: 11, fontFamily: 'IBM Plex Mono', color: T.muted,
           }}>{now}</div>
         </div>
-      </div>
+      </div>x
 
       {/* ── Stat cards grid ─────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>

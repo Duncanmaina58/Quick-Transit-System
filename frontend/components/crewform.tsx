@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import { adminApi } from '@/lib/api/admin'; // adjust to your actual import path
-
+import type { UserRole } from '@/types/api';
 interface CreatedCredentials {
   employeeId: string;
   email: string;
@@ -23,15 +23,23 @@ export function AddCrewForm() {
   const [credentials, setCredentials] = useState<CreatedCredentials | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    role: 'driver',
-    saccoId: '',
-    sendCredentials: true,
-  });
+  const [formData, setFormData] = useState<{
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  role: UserRole;
+  saccoId: string;
+  sendCredentials: boolean;
+}>({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phoneNumber: '',
+  role: 'driver' as UserRole,
+  saccoId: '',
+  sendCredentials: true,
+});
 
   const resetForm = () => {
     setFormData({

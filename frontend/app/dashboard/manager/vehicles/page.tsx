@@ -31,7 +31,12 @@ const lbl: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '0.8px', color: '#5b7fa0', marginBottom: 5,
 };
 
-const STATUS_OPTIONS = ['Active', 'Maintenance', 'Inactive', 'Suspended'];
+const STATUS_OPTIONS = [
+  'Active',
+  'Maintenance',
+  'Inactive',
+  'Suspended',
+] as const;
 const STATUS_COLORS: Record<string, string> = {
   Active: '#10b981', Maintenance: '#f59e0b', Inactive: '#ef4444', Suspended: '#64748b',
 };
@@ -242,8 +247,18 @@ export default function VehiclesPage() {
           <div style={{ padding: '10px 16px', borderTop: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 10, fontFamily: 'IBM Plex Mono', color: T.muted }}>Page {meta.page} / {meta.totalPages} · {meta.totalCount} vehicles</span>
             <div style={{ display: 'flex', gap: 6 }}>
-              <Pag label="← Prev" disabled={!meta.hasPrevious} onClick={() => setFilter((f: { page: any; }) => ({ ...f, page: (f.page ?? 1) - 1 }))} />
-              <Pag label="Next →" disabled={!meta.hasNext}     onClick={() => setFilter((f: { page: any; }) => ({ ...f, page: (f.page ?? 1) + 1 }))} />
+              <Pag label="← Prev" disabled={!meta.hasPrevious} onClick={() =>
+  setFilter(f => ({
+    ...f,
+    page: (f.page ?? 1) - 1,
+  }))
+} />
+              <Pag label="Next →" disabled={!meta.hasNext}     onClick={() =>
+  setFilter(f => ({
+    ...f,
+    page: (f.page ?? 1) + 1,
+  }))
+} />
             </div>
           </div>
         )}

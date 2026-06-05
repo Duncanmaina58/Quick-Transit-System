@@ -160,11 +160,11 @@ onSuccess: (response) => {
           </form>
 
           {/* Demo credentials hint */}
-          <div className="mt-6 p-3 rounded-xl bg-white/5 border border-white/10">
+          {/* <div className="mt-6 p-3 rounded-xl bg-white/5 border border-white/10">
             <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Demo Access</p>
             <p className="text-xs text-white/40 font-mono">admin@quicktransit.com</p>
             <p className="text-xs text-white/40 font-mono">Admin123!</p>
-          </div>
+          </div> */}
 
           <p className="text-center text-xs text-white/30 mt-6">
             Having trouble?{' '}

@@ -105,6 +105,11 @@ app.MapControllers();
 // ── Seed ──────────────────────────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider
+                  .GetRequiredService<ApplicationDbContext>();
+
+    await db.Database.MigrateAsync();
+
     try
     {
         await SeedData.Initialize(scope.ServiceProvider);

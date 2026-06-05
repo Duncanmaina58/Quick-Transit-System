@@ -247,7 +247,15 @@ function CrewCard({ user, onView, onEdit, onReset, onToggle }: {
           <span style={{ padding: '2px 7px', borderRadius: 20, fontSize: 9, fontFamily: 'IBM Plex Mono', textTransform: 'uppercase', background: rc.bg, color: rc.color }}>
             {user.role}
           </span>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: user.isActive ? '#10b981' : '#ef4444', title: user.isActive ? 'Active' : 'Inactive' }} />
+          <div
+  title={user.isActive ? 'Active' : 'Inactive'}
+  style={{
+    width: 7,
+    height: 7,
+    borderRadius: '50%',
+    background: user.isActive ? '#10b981' : '#ef4444',
+  }}
+/>
         </div>
       </div>
 

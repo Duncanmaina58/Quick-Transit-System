@@ -267,7 +267,9 @@ export default function UsersPage() {
           title="Create User"
           saccos={saccos}
           onClose={() => setModal(null)}
-          onSubmit={(req) => createMutation.mutate(req)}
+          onSubmit={(req) =>
+  createMutation.mutate(req as CreateUserRequest)
+}
           loading={createMutation.isPending}
         />
       )}
