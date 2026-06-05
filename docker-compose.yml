@@ -6,79 +6,54 @@ services:
     image: postgres:15-alpine
     container_name: quicktransit-postgres
     restart: always
-
     environment:
       POSTGRES_DB: quicktransit_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-
     networks:
       - quicktransit-network
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-
+    image: duncanmaina/quicktransit-backend:latest
     container_name: quicktransit-api
-
     restart: always
-
     environment:
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=quicktransit_db;Username=postgres;Password=postgres123;Include Error Detail=true
       ASPNETCORE_ENVIRONMENT: Development
-
     ports:
       - "8082:8080"
-
     depends_on:
       - postgres
-
     networks:
       - quicktransit-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-
+    image: duncanmaina/quicktransit-frontend:latest
     container_name: quicktransit-frontend
-
     restart: always
-
     ports:
       - "3000:3000"
-
     depends_on:
       - backend
-
     networks:
       - quicktransit-network
 
   pgadmin:
     image: dpage/pgadmin4
-
     container_name: quicktransit-pgadmin
-
     restart: always
-
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@quicktransit.com
       PGADMIN_DEFAULT_PASSWORD: admin123
-
     ports:
       - "5050:80"
-
     depends_on:
       - postgres
-
     networks:
       - quicktransit-network
 

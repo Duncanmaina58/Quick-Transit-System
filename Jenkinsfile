@@ -1,8 +1,10 @@
 pipeline {
     agent any
     environment {
-        // Host path that Docker daemon can actually see
         HOST_BASE = "/var/lib/docker/volumes/jenkins_home/_data/workspace/quick-transit-ci"
+        DOCKERHUB_USERNAME = "duncanmaina"
+        BACKEND_IMAGE = "duncanmaina/quicktransit-backend"
+        FRONTEND_IMAGE = "duncanmaina/quicktransit-frontend"
     }
     stages {
         stage('Checkout Code') {
@@ -10,47 +12,57 @@ pipeline {
                 checkout scm
             }
         }
+
         stage('Backend Build (.NET)') {
             steps {
-                sh 'ls -la backend/'
-                sh '''
-                    docker run --rm \
-                      -v "${HOST_BASE}/backend:/app" \
-                      -w /app \
-                      mcr.microsoft.com/dotnet/sdk:9.0 \
-                      dotnet restore
-                '''
-                sh '''
-                    docker run --rm \
-                      -v "${HOST_BASE}/backend:/app" \
-                      -w /app \
-                      mcr.microsoft.com/dotnet/sdk:9.0 \
-                      dotnet build --configuration Release
-                '''
+                sh 'docker run --rm -v "${HOST_BASE}/backend:/app" -w /app mcr.microsoft.com/dotnet/sdk:9.0 dotnet restore'
+                sh 'docker run --rm -v "${HOST_BASE}/backend:/app" -w /app mcr.microsoft.com/dotnet/sdk:9.0 dotnet build --configuration Release'
             }
         }
-  stage('Frontend Build (Node.js)') {
-    steps {
-        sh 'ls -la frontend/'
-        sh '''
-            docker run --rm \
-              -v "${HOST_BASE}/frontend:/app" \
-              -w /app \
-              node:20-bullseye \
-              npm install
-        '''
-        sh '''
-            docker run --rm \
-              -v "${HOST_BASE}/frontend:/app" \
-              -w /app \
-              node:20-bullseye \
-              npm run build
-        '''
-    }
-}
+
+        stage('Frontend Build (Node.js)') {
+            steps {
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh 'docker build -t ${BACKEND_IMAGE}:${BUILD_NUMBER} -t ${BACKEND_IMAGE}:latest backend/'
+                sh 'docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}'
+                    sh 'docker push ${BACKEND_IMAGE}:latest'
+                    sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}'
+                    sh 'docker push ${FRONTEND_IMAGE}:latest'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'docker compose -f docker-compose.yml up -d --pull always'
+            }
+        }
     }
     post {
-        success { echo 'CI Pipeline SUCCESS 🎉' }
-        failure { echo 'CI Pipeline FAILED ❌' }
+        success { echo 'CI/CD Pipeline SUCCESS 🎉' }
+        failure { echo 'CI/CD Pipeline FAILED ❌' }
+        always {
+            sh 'docker logout'
+        }
     }
 }
