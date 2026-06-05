@@ -3,30 +3,20 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                cleanWs()  // Clean workspace before checkout
+                cleanWs()
                 checkout scm
             }
         }
         stage('Backend Build (.NET)') {
             steps {
-                sh '''
-                docker run --rm \
-                -v $PWD/backend:/app \
-                -w /app \
-                mcr.microsoft.com/dotnet/sdk:9.0 \
-                bash -c "dotnet --version && dotnet restore && dotnet build --configuration Release"
-                '''
+                sh 'chmod +x build-backend.sh'
+                sh 'docker run --rm -v $PWD/backend:/app -v $PWD/build-backend.sh:/build.sh -w /app mcr.microsoft.com/dotnet/sdk:9.0 bash /build.sh'
             }
         }
         stage('Frontend Build (Node.js)') {
             steps {
-                sh '''
-                docker run --rm \
-                -v $PWD/frontend:/app \
-                -w /app \
-                node:20 \
-                bash -c "node --version && npm install && npm run build"
-                '''
+                sh 'chmod +x build-frontend.sh'
+                sh 'docker run --rm -v $PWD/frontend:/app -v $PWD/build-frontend.sh:/build.sh -w /app node:20 bash /build.sh'
             }
         }
     }
