@@ -9,14 +9,24 @@ pipeline {
         }
         stage('Backend Build (.NET)') {
             steps {
-                sh 'chmod +x build-backend.sh'
-                sh 'docker run --rm -v $PWD/backend:/app -v $PWD/build-backend.sh:/scripts/build.sh -w /app mcr.microsoft.com/dotnet/sdk:9.0 bash /scripts/build.sh'
+                sh '''
+                docker run --rm \
+                  -v $PWD/backend:/app \
+                  -w /app \
+                  mcr.microsoft.com/dotnet/sdk:9.0 \
+                  sh -c 'dotnet --version && dotnet restore && dotnet build --configuration Release'
+                '''
             }
         }
         stage('Frontend Build (Node.js)') {
             steps {
-                sh 'chmod +x build-frontend.sh'
-                sh 'docker run --rm -v $PWD/frontend:/app -v $PWD/build-frontend.sh:/scripts/build.sh -w /app node:20 bash /scripts/build.sh'
+                sh '''
+                docker run --rm \
+                  -v $PWD/frontend:/app \
+                  -w /app \
+                  node:20 \
+                  sh -c 'node --version && npm install && npm run build'
+                '''
             }
         }
     }
