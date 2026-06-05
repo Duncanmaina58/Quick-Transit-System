@@ -5,6 +5,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
+                cleanWs() // Clean workspace before checkout
                 checkout scm
             }
         }
