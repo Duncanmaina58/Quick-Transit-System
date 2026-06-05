@@ -14,7 +14,7 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                -v $PWD/Backend:/app \
+                -v $PWD/backend:/app \
                 -w /app \
                 mcr.microsoft.com/dotnet/sdk:8.0 \
                 bash -c "dotnet --version && dotnet restore && dotnet build --configuration Release"
@@ -26,7 +26,7 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                -v $PWD/Frontend:/app \
+                -v $PWD/frontend:/app \
                 -w /app \
                 node:20 \
                 bash -c "node --version && npm install && npm run build"
