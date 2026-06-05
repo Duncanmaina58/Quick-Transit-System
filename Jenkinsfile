@@ -11,29 +11,25 @@ pipeline {
 
         stage('Backend Build (.NET)') {
             steps {
-                script {
-                    docker.image('mcr.microsoft.com/dotnet/sdk:8.0').inside {
-                        dir('Backend') {
-                            sh 'dotnet --version'
-                            sh 'dotnet restore'
-                            sh 'dotnet build --configuration Release'
-                        }
-                    }
-                }
+                sh '''
+                docker run --rm \
+                -v $PWD/Backend:/app \
+                -w /app \
+                mcr.microsoft.com/dotnet/sdk:8.0 \
+                bash -c "dotnet --version && dotnet restore && dotnet build --configuration Release"
+                '''
             }
         }
 
         stage('Frontend Build (Node.js)') {
             steps {
-                script {
-                    docker.image('node:20').inside {
-                        dir('Frontend') {
-                            sh 'node --version'
-                            sh 'npm install'
-                            sh 'npm run build'
-                        }
-                    }
-                }
+                sh '''
+                docker run --rm \
+                -v $PWD/Frontend:/app \
+                -w /app \
+                node:20 \
+                bash -c "node --version && npm install && npm run build"
+                '''
             }
         }
     }
