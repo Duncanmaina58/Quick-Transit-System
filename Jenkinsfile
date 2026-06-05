@@ -9,20 +9,22 @@ pipeline {
             }
         }
 
-        stage('Backend Restore & Build') {
+        stage('Backend Build') {
             steps {
                 dir('Backend') {
-                    bat 'dotnet restore'
-                    bat 'dotnet build --configuration Release'
+                    sh 'dotnet --version'
+                    sh 'dotnet restore'
+                    sh 'dotnet build --configuration Release'
                 }
             }
         }
 
-        stage('Frontend Install & Build') {
+        stage('Frontend Build') {
             steps {
                 dir('Frontend') {
-                    bat 'npm install'
-                    bat 'npm run build'
+                    sh 'npm --version'
+                    sh 'npm install'
+                    sh 'npm run build'
                 }
             }
         }
