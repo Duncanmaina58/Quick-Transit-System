@@ -29,13 +29,12 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+     stage('Build Docker Images') {
     steps {
-        sh 'docker build --dns 8.8.8.8 --dns 8.8.4.4 -t ${BACKEND_IMAGE}:${BUILD_NUMBER} -t ${BACKEND_IMAGE}:latest backend/'
-        sh 'docker build --dns 8.8.8.8 --dns 8.8.4.4 -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
+        sh 'DOCKER_BUILDKIT=0 docker build -t ${BACKEND_IMAGE}:${BUILD_NUMBER} -t ${BACKEND_IMAGE}:latest backend/'
+        sh 'DOCKER_BUILDKIT=0 docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
     }
 }
-
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
