@@ -35,21 +35,23 @@ pipeline {
         sh 'DOCKER_BUILDKIT=0 docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
     }
 }
-        stage('Push to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}'
-                    sh 'docker push ${BACKEND_IMAGE}:latest'
-                    sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}'
-                    sh 'docker push ${FRONTEND_IMAGE}:latest'
-                }
+       stage('Push to Docker Hub') {
+    steps {
+        retry(3) {
+            withCredentials([usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+            )]) {
+                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}'
+                sh 'docker push ${BACKEND_IMAGE}:latest'
+                sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}'
+                sh 'docker push ${FRONTEND_IMAGE}:latest'
             }
         }
+    }
+}
 
         stage('Deploy') {
     steps {
