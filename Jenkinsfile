@@ -52,10 +52,10 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                sh 'docker compose -f docker-compose.yml up -d --pull always'
-            }
-        }
+    steps {
+        sh 'docker-compose -f docker-compose.yml up -d --pull always'
+    }
+}
     }
     post {
         success { echo 'CI/CD Pipeline SUCCESS 🎉' }
