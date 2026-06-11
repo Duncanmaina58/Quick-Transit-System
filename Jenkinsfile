@@ -35,27 +35,27 @@ pipeline {
         sh 'DOCKER_BUILDKIT=0 docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
     }
 }
-        stage('Push to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}'
-                    sh 'docker push ${BACKEND_IMAGE}:latest'
-                    sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}'
-                    sh 'docker push ${FRONTEND_IMAGE}:latest'
-                }
-            }
+     stage('Push to Docker Hub') {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-credentials',
+            usernameVariable: 'DOCKER_USER',
+            passwordVariable: 'DOCKER_PASS'
+        )]) {
+            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+            retry(3) { sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}' }
+            retry(3) { sh 'docker push ${BACKEND_IMAGE}:latest' }
+            retry(3) { sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}' }
+            retry(3) { sh 'docker push ${FRONTEND_IMAGE}:latest' }
         }
+    }
+}
 
         stage('Deploy') {
-            steps {
-                sh 'docker compose -f docker-compose.yml up -d --pull always'
-            }
-        }
+    steps {
+        sh 'docker-compose -f docker-compose.yml up -d --pull always'
+    }
+}
     }
     post {
         success { echo 'CI/CD Pipeline SUCCESS 🎉' }
