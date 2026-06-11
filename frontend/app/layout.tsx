@@ -4,7 +4,10 @@ import './globals.css';
 import ReactQueryProvider from '@/providers/ReactQueryProvider';
 import { Toaster } from 'react-hot-toast';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  preload: false,
+})
 
 export const metadata: Metadata = {
   title: 'QuickTransit - Public Transport Management',
