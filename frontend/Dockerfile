@@ -3,7 +3,9 @@ FROM node:20-bullseye
 WORKDIR /app
 
 COPY package*.json ./
-COPY node_modules ./node_modules
+
+RUN npm install --omit=dev --prefer-offline
+
 COPY .next ./.next
 COPY public ./public
 
