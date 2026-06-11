@@ -5,8 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY .next ./.next
 COPY public ./public
-
-RUN npm install --omit=dev
+COPY node_modules ./node_modules
 
 EXPOSE 3000
 CMD ["npm", "start"]
