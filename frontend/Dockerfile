@@ -1,14 +1,12 @@
-FROM node:20-bullseye
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-
-RUN npm install --omit=dev --prefer-offline
-
 COPY .next ./.next
 COPY public ./public
 
-EXPOSE 3000
+RUN npm install --omit=dev
 
+EXPOSE 3000
 CMD ["npm", "start"]
