@@ -55,8 +55,9 @@ stage('Push to Docker Hub') {
     }
 }
 
-        stage('Deploy') {
+stage('Deploy') {
     steps {
+        sh 'docker compose -f docker-compose.yml down --remove-orphans'
         sh 'docker compose -f docker-compose.yml up -d --pull always'
     }
 }
