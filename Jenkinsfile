@@ -29,10 +29,10 @@ pipeline {
             }
         }
 
-     stage('Build Docker Images') {
+   stage('Build Docker Images') {
     steps {
-        sh 'DOCKER_BUILDKIT=0 docker build -t ${BACKEND_IMAGE}:${BUILD_NUMBER} -t ${BACKEND_IMAGE}:latest backend/'
-        sh 'DOCKER_BUILDKIT=0 docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
+        sh 'docker build -t ${BACKEND_IMAGE}:${BUILD_NUMBER} -t ${BACKEND_IMAGE}:latest backend/'
+        sh 'docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
     }
 }
      stage('Push to Docker Hub') {
