@@ -1,11 +1,13 @@
-FROM node:20-alpine
+FROM node:20-bullseye-slim
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY .next ./.next  
+COPY .next/standalone ./
+COPY .next/static ./.next/static
 COPY public ./public
-COPY node_modules ./node_modules
 
 EXPOSE 3000
-CMD ["npm", "start"]
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
