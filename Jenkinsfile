@@ -53,7 +53,7 @@ pipeline {
 
         stage('Deploy') {
     steps {
-        sh 'docker-compose -f docker-compose.yml up -d --pull always'
+        sh 'docker compose -f docker-compose.yml up -d --pull always'
     }
 }
     }
