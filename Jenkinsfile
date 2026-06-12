@@ -57,7 +57,7 @@ stage('Push to Docker Hub') {
 
 stage('Deploy') {
     steps {
-        sh 'docker rm -f quicktransit-postgres quicktransit-frontend quicktransit-backend quicktransit-pgadmin || true'
+        sh 'docker rm -f quicktransit-postgres quicktransit-frontend quicktransit-backend quicktransit-pgadmin quicktransit-api || true'
         sh 'docker compose -f docker-compose.yml down --remove-orphans'
         sh 'docker compose -f docker-compose.yml up -d --pull always'
     }
