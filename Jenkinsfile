@@ -35,7 +35,11 @@ pipeline {
         sh 'docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -t ${FRONTEND_IMAGE}:latest frontend/'
     }
 }
-     stage('Push to Docker Hub') {
+stage('Push to Docker Hub') {
+    environment {
+        NO_PROXY = "registry-1.docker.io,auth.docker.io,production.cloudflare.docker.com"
+        no_proxy = "registry-1.docker.io,auth.docker.io,production.cloudflare.docker.com"
+    }
     steps {
         withCredentials([usernamePassword(
             credentialsId: 'dockerhub-credentials',
